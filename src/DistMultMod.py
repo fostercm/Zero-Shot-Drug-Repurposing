@@ -3,6 +3,8 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn import Embedding
 from torch_geometric.nn.kge import KGEModel
+from torch_geometric.data import HeteroData
+from typing import Tuple
 
 
 class DistMultMod(torch.nn.Module):
@@ -38,6 +40,7 @@ class DistMultMod(torch.nn.Module):
         num_nodes: int,
         num_relations: int,
         hidden_channels: int,
+        data: HeteroData,
         margin: float = 1.0,
         sparse: bool = False,
     ):
@@ -49,6 +52,7 @@ class DistMultMod(torch.nn.Module):
 
         self.node_emb = torch.empty(num_nodes, hidden_channels)
         self.rel_emb = torch.empty(num_relations, hidden_channels)
+        self.data = data
 
         self.margin = margin
 
@@ -65,10 +69,14 @@ class DistMultMod(torch.nn.Module):
         tail_index: Tensor,
     ) -> Tensor:
 
-        head = self.node_emb[head_index]
+        head = torch.empty(len(head_index), self.hidden_channels)
+        tail = torch.empty(len(tail_index), self.hidden_channels)
+        
+        keys = list(self.data.edge_index_dict.keys())
+        for i in range(len(rel_type)):
+            head[i][:] = self.node_emb[keys[rel_type[i]][0]][head_index[i]]
+            tail[i][:] = self.node_emb[keys[rel_type[i]][2]][tail_index[i]]
         rel = self.rel_emb[rel_type]
-        tail = self.node_emb[tail_index]
-
         return (head * rel * tail).sum(dim=-1)
 
     def loss(
@@ -78,12 +86,39 @@ class DistMultMod(torch.nn.Module):
             tail_index: Tensor,
         ) -> Tensor:
 
-            pos_score = self(head_index, rel_type, tail_index)
-            neg_score = self(*self.random_sample(head_index, rel_type, tail_index))
+        pos_score = self(head_index, rel_type, tail_index)
+        neg_score = self(*self.random_sample(head_index, rel_type, tail_index))
 
-            return F.margin_ranking_loss(
-                pos_score,
-                neg_score,
-                target=torch.ones_like(pos_score),
-                margin=self.margin,
-            )
+        return F.margin_ranking_loss(
+            pos_score,
+            neg_score,
+            target=torch.ones_like(pos_score),
+            margin=self.margin,
+        )
+    
+    @torch.no_grad()
+    def random_sample(
+        self,
+        head_index: Tensor,
+        rel_type: Tensor,
+        tail_index: Tensor,
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        r"""Randomly samples negative triplets by either replacing the head or
+        the tail (but not both).
+
+        Args:
+            head_index (torch.Tensor): The head indices.
+            rel_type (torch.Tensor): The relation type.
+            tail_index (torch.Tensor): The tail indices.
+        """
+        # Random sample either `head_index` or `tail_index` (but not both):
+        num_negatives = head_index.numel() // 2
+        rnd_index = torch.randint(self.num_nodes, head_index.size(),
+                                  device=head_index.device)
+
+        head_index = head_index.clone()
+        head_index[:num_negatives] = rnd_index[:num_negatives]
+        tail_index = tail_index.clone()
+        tail_index[num_negatives:] = rnd_index[num_negatives:]
+
+        return head_index, rel_type, tail_index

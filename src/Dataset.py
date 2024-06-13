@@ -5,6 +5,7 @@ from torch_geometric.loader import DataLoader
 import torch_geometric.transforms as T
 import torch
 from copy import deepcopy
+from torch.nn.init import xavier_uniform_
 
 def processData(embedding_dim, batch_size):
     
@@ -31,7 +32,8 @@ def processData(embedding_dim, batch_size):
         
     # Add nodes to HeteroData object with randomized features
     for node_type in node_dict.keys():
-        data[node_type].x = torch.randn(node_dict[node_type], embedding_dim)
+        data[node_type].x = torch.empty(node_dict[node_type], embedding_dim)
+        xavier_uniform_(data[node_type].x)
     
     # Create edge dict to keep track of within-type indices
     temp = deepcopy(kg)
@@ -90,9 +92,6 @@ def processData(embedding_dim, batch_size):
             
         # Store in data
         data[group['x_type'].values[0], relation, group['y_type'].values[0]].edge_index = edge_list
-        
-    # Data must be undirected for proper GNN Message Passing
-    data = T.ToUndirected()(data)
     
     # Make pretraining and finetuning datasets
     pretrain_head_idx = []
@@ -100,37 +99,37 @@ def processData(embedding_dim, batch_size):
     pretrain_tail_idx = []
 
     finetune_head_idx = []
-    finetine_relation = []
-    finetine_tail_idx = []
+    finetune_relation = []
+    finetune_tail_idx = []
 
     for i,edge_type in enumerate(data.edge_types):
         pretrain_head_idx.extend(data[edge_type].edge_index[0].tolist())
         pretrain_relation.extend([i]*data[edge_type].edge_index.shape[1])
         pretrain_tail_idx.extend(data[edge_type].edge_index[1].tolist())
         
-        if edge_type[1] == 'contraindication' or edge_type[1] == 'rev_contraindication':
+        if edge_type[1] == 'contraindication':
             finetune_head_idx.extend(data[edge_type].edge_index[0].tolist())
-            finetine_relation.extend([0]*data[edge_type].edge_index.shape[1])
-            finetine_tail_idx.extend(data[edge_type].edge_index[1].tolist())
-        elif edge_type[1] == 'indication' or edge_type[1] == 'rev_indication':
+            finetune_relation.extend([0]*data[edge_type].edge_index.shape[1])
+            finetune_tail_idx.extend(data[edge_type].edge_index[1].tolist())
+        elif edge_type[1] == 'indication':
             finetune_head_idx.extend(data[edge_type].edge_index[0].tolist())
-            finetine_relation.extend([1]*data[edge_type].edge_index.shape[1])
-            finetine_tail_idx.extend(data[edge_type].edge_index[1].tolist())
-        elif edge_type[1] == 'off-label use' or edge_type[1] == 'rev_off-label use':
+            finetune_relation.extend([1]*data[edge_type].edge_index.shape[1])
+            finetune_tail_idx.extend(data[edge_type].edge_index[1].tolist())
+        elif edge_type[1] == 'off-label use':
             finetune_head_idx.extend(data[edge_type].edge_index[0].tolist())
-            finetine_relation.extend([2]*data[edge_type].edge_index.shape[1])
-            finetine_tail_idx.extend(data[edge_type].edge_index[1].tolist())
+            finetune_relation.extend([2]*data[edge_type].edge_index.shape[1])
+            finetune_tail_idx.extend(data[edge_type].edge_index[1].tolist())
 
     pretrain_head_idx = torch.tensor(pretrain_head_idx)
     pretrain_relation = torch.tensor(pretrain_relation)
     pretrain_tail_idx = torch.tensor(pretrain_tail_idx)
 
     finetune_head_idx = torch.tensor(finetune_head_idx)
-    finetine_relation = torch.tensor(finetine_relation)
-    finetine_tail_idx = torch.tensor(finetine_tail_idx)
+    finetune_relation = torch.tensor(finetune_relation)
+    finetune_tail_idx = torch.tensor(finetune_tail_idx)
     
     pdata = torch.stack([pretrain_head_idx, pretrain_relation, pretrain_tail_idx], dim=1)
-    fdata = torch.stack([finetune_head_idx, finetine_relation, finetine_tail_idx], dim=1)
+    fdata = torch.stack([finetune_head_idx, finetune_relation, finetune_tail_idx], dim=1)
 
     psplit = torch.utils.data.random_split(pdata, [0.8,0.1,0.1])
     fsplit = torch.utils.data.random_split(fdata, [0.8,0.1,0.1])
@@ -142,5 +141,8 @@ def processData(embedding_dim, batch_size):
     ftrain_loader = DataLoader(fsplit[0], batch_size=batch_size, shuffle=True)
     fval_loader = DataLoader(fsplit[1], batch_size=batch_size, shuffle=True)
     ftest_loader = DataLoader(fsplit[2], batch_size=batch_size, shuffle=True)
+    
+    # Data must be undirected for proper GNN Message Passing
+    data = T.ToUndirected()(data)
     
     return data, ptrain_loader, pval_loader, ptest_loader, ftrain_loader, fval_loader, ftest_loader
