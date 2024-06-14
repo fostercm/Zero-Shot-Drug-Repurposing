@@ -32,7 +32,7 @@ def processData(embedding_dim, batch_size):
         
     # Add nodes to HeteroData object with randomized features
     for node_type in node_dict.keys():
-        data[node_type].x = torch.empty(node_dict[node_type], embedding_dim)
+        data[node_type].x = torch.empty(node_dict[node_type], embedding_dim, requires_grad=True)
         xavier_uniform_(data[node_type].x)
     
     # Create edge dict to keep track of within-type indices
@@ -94,42 +94,18 @@ def processData(embedding_dim, batch_size):
         data[group['x_type'].values[0], relation, group['y_type'].values[0]].edge_index = edge_list
     
     # Make pretraining and finetuning datasets
-    pretrain_head_idx = []
-    pretrain_relation = []
-    pretrain_tail_idx = []
+    pretrain_indices = kg[['x_index','relation','y_index']]
+    name_to_num = dict(zip(pretrain_indices['relation'], pd.factorize(pretrain_indices['relation'])[0]))
+    pretrain_indices['relation'] = pretrain_indices['relation'].map(name_to_num)
 
-    finetune_head_idx = []
-    finetune_relation = []
-    finetune_tail_idx = []
-
-    for i,edge_type in enumerate(data.edge_types):
-        pretrain_head_idx.extend(data[edge_type].edge_index[0].tolist())
-        pretrain_relation.extend([i]*data[edge_type].edge_index.shape[1])
-        pretrain_tail_idx.extend(data[edge_type].edge_index[1].tolist())
-        
-        if edge_type[1] == 'contraindication':
-            finetune_head_idx.extend(data[edge_type].edge_index[0].tolist())
-            finetune_relation.extend([0]*data[edge_type].edge_index.shape[1])
-            finetune_tail_idx.extend(data[edge_type].edge_index[1].tolist())
-        elif edge_type[1] == 'indication':
-            finetune_head_idx.extend(data[edge_type].edge_index[0].tolist())
-            finetune_relation.extend([1]*data[edge_type].edge_index.shape[1])
-            finetune_tail_idx.extend(data[edge_type].edge_index[1].tolist())
-        elif edge_type[1] == 'off-label use':
-            finetune_head_idx.extend(data[edge_type].edge_index[0].tolist())
-            finetune_relation.extend([2]*data[edge_type].edge_index.shape[1])
-            finetune_tail_idx.extend(data[edge_type].edge_index[1].tolist())
-
-    pretrain_head_idx = torch.tensor(pretrain_head_idx)
-    pretrain_relation = torch.tensor(pretrain_relation)
-    pretrain_tail_idx = torch.tensor(pretrain_tail_idx)
-
-    finetune_head_idx = torch.tensor(finetune_head_idx)
-    finetune_relation = torch.tensor(finetune_relation)
-    finetune_tail_idx = torch.tensor(finetune_tail_idx)
+    finetune_indices = kg[['x_index','relation','y_index']]
+    finetune_indices = finetune_indices.loc[(finetune_indices['relation'] == 'contraindication') | 
+                                            (finetune_indices['relation'] == 'indication') | 
+                                            (finetune_indices['relation'] == 'off_label_use')]
+    finetune_indices['relation'] = finetune_indices['relation'].map(name_to_num)
     
-    pdata = torch.stack([pretrain_head_idx, pretrain_relation, pretrain_tail_idx], dim=1)
-    fdata = torch.stack([finetune_head_idx, finetune_relation, finetune_tail_idx], dim=1)
+    pdata = torch.tensor(pretrain_indices.values,dtype=torch.long)
+    fdata = torch.tensor(finetune_indices.values,dtype=torch.long)
 
     psplit = torch.utils.data.random_split(pdata, [0.8,0.1,0.1])
     fsplit = torch.utils.data.random_split(fdata, [0.8,0.1,0.1])

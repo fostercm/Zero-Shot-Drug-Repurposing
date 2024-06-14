@@ -48,8 +48,9 @@ class DistMultMod(torch.nn.Module):
         self.num_relations = num_relations
         self.hidden_channels = hidden_channels
 
-        self.node_emb = torch.empty(num_nodes, hidden_channels)
-        self.rel_emb = torch.empty(num_relations, hidden_channels)
+        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.node_emb = torch.empty(num_nodes, hidden_channels).to(self.device)
+        self.rel_emb = torch.empty(num_relations, hidden_channels).to(self.device)
         self.data = data
 
         self.margin = margin
@@ -67,14 +68,19 @@ class DistMultMod(torch.nn.Module):
         tail_index: Tensor,
     ) -> Tensor:
 
-        head = torch.empty(len(head_index), self.hidden_channels)
-        tail = torch.empty(len(tail_index), self.hidden_channels)
+        # head = torch.empty(len(head_index), self.hidden_channels)
+        # tail = torch.empty(len(tail_index), self.hidden_channels)
         
-        keys = list(self.data.edge_index_dict.keys())
-        for i in range(len(rel_type)):
-            head[i][:] = self.node_emb[keys[rel_type[i]][0]][head_index[i]]
-            tail[i][:] = self.node_emb[keys[rel_type[i]][2]][tail_index[i]]
+        # keys = list(self.data.edge_index_dict.keys())
+        # for i in range(len(rel_type)):
+        #     head[i][:] = self.node_emb[keys[rel_type[i]][0]][head_index[i]]
+        #     tail[i][:] = self.node_emb[keys[rel_type[i]][2]][tail_index[i]]
+        # rel = self.rel_emb[rel_type]
+        head = self.node_emb[head_index]
+        tail = self.node_emb[tail_index]
         rel = self.rel_emb[rel_type]
+        
+        
         return (head * rel * tail).sum(dim=-1)
 
     def loss(
