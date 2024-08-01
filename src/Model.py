@@ -1,11 +1,49 @@
 import torch
-import torch.nn.functional as F
 from torch import Tensor
+from torch.nn import Module, SiLU
+import torch.nn.functional as F
+from torch_geometric import nn
+from torch_geometric.nn import GATConv, to_hetero
 from torch_geometric.data import HeteroData
 from typing import Tuple
-import numpy as np
+from tqdm.notebook import tqdm
 import math
 
+
+class KGLinkPredictor(Module):
+    def __init__(self, in_channels, hidden_channels, data):
+        super(KGLinkPredictor, self).__init__()
+        
+        self.Encoder = nn.Sequential('x, edge_index', [
+            (GATConv(in_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
+            SiLU(inplace=True),
+            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
+            SiLU(inplace=True),
+            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
+            SiLU(inplace=True),
+            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
+            SiLU(inplace=True),
+            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x')
+        ])
+        self.Encoder = to_hetero(self.Encoder, data.metadata())
+        
+        self.Decoder = DistMultMod(data, hidden_channels)
+        
+        self.data = data
+
+    def forward(self, head_indices, relations, tail_indices):
+        
+        # Message Passing
+        x = self.Encoder(self.data.x_dict,self.data.edge_index_dict)
+        
+        # Update Embeddings
+        self.Decoder.node_emb = torch.vstack([*x.values()])
+        
+        # Return prediction
+        return torch.sigmoid(self.Decoder(head_indices, relations, tail_indices))
+    
+    def loss(self, head_index, relation, tail_index):
+        return self.Decoder.loss(head_index, relation, tail_index)
 
 class DistMultMod(torch.nn.Module):
 
@@ -123,3 +161,47 @@ class DistMultMod(torch.nn.Module):
         tail_index[num_negatives:] = rnd_index[num_negatives:]
 
         return head_index, rel_type, tail_index
+    
+def train(train_loader,val_loader, model, optimizer, device, epochs):
+    
+    # Set model to training mode
+    model.train()
+    
+    for epoch in tqdm(range(epochs)):
+        
+        train_loss = 0
+        for batch in train_loader:
+            
+            # Send data to GPU
+            head_indices,relations,tail_indices = batch[:,0], batch[:,1], batch[:,2]
+            head_indices,relations,tail_indices = head_indices.to(device),relations.to(device),tail_indices.to(device)
+            
+            # Zero gradients
+            optimizer.zero_grad()
+            
+            # Forward pass through model to update node embeddings
+            model(head_indices,relations,tail_indices)
+            
+            # Compute and backpropagate loss
+            loss = model.loss(head_indices, relations, tail_indices)
+            train_loss += loss.item()
+            loss.backward()
+            
+            # Step optimizer
+            optimizer.step()
+        
+        val_loss = 0
+        for batch in val_loader:
+            
+            # Send data to GPU
+            head_indices,relations,tail_indices = batch[:,0], batch[:,1], batch[:,2]
+            head_indices,relations,tail_indices = head_indices.to(device),relations.to(device),tail_indices.to(device)
+            
+            # Forward pass through model to update node embeddings
+            model(head_indices,relations,tail_indices)
+            
+            # Compute loss
+            loss = model.loss(head_indices, relations, tail_indices)
+            val_loss += loss.item()
+                
+        print(f"Epoch {epoch+1} | Average Training Loss: {train_loss / len(train_loader)} Average Validation Loss: {val_loss / len(val_loader)}")
