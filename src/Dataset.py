@@ -11,10 +11,10 @@ from copy import deepcopy
 from torch.nn.init import xavier_uniform_
 import numpy as np
 
-def processFiles(path):
+def processFiles(path, fileName):
         
     # Get data path and import important files
-    dataPath = path + r'/data/kg.csv'
+    dataPath = path + r'/data/' + fileName
     print(f"Loading data from path: {dataPath}")
     kg = pd.read_csv(dataPath,low_memory=False)
     kg['x_type']= kg['x_type'].apply(lambda x: x.replace("/","_"))
@@ -176,11 +176,11 @@ def constructDiseaseSimilarity(data,k):
         
     return disease_similarity_storage
     
-def processData(embedding_dim, batch_size, k=10):
+def processData(embedding_dim, batch_size, fileName, k=10):
     
     # Get data path and process knowledge graph
     path = os.path.dirname(os.getcwd())
-    kg = processFiles(path)
+    kg = processFiles(path, fileName)
     
     # Create HeteroData object
     data = HeteroData()
@@ -234,8 +234,8 @@ def processData(embedding_dim, batch_size, k=10):
     
     # Save disease similarity matrix
     if 'disease_similarity.pt' not in os.listdir():
-        print("Processing disease similarities... (THIS WILL TAKE AROUND 40 MINUTES)")
-        torch.save(constructDiseaseSimilarity(),'disease_similarity.pt')
+        print("Processing disease similarities... (THIS WILL TAKE AROUND 70 MINUTES)")
+        torch.save(constructDiseaseSimilarity(data,10),'disease_similarity.pt')
         
     ## FUTURE MODIFICATION FOR OUR DISEASE INPUT
     data['similarity'] = torch.load('disease_similarity.pt')
