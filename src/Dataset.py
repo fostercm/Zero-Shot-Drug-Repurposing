@@ -13,14 +13,22 @@ import numpy as np
 
 def processFiles(path, fileName):
         
-    # Get data path and import important files
+    # Get data path and import KG file with column names
     dataPath = path + r'/data/' + fileName
     print(f"Loading data from path: {dataPath}")
-    kg = pd.read_csv(dataPath,low_memory=False)
+    kg = pd.read_csv(dataPath, sep='\t')
+    kg.columns = ['relation','x_type','x_name','y_type','y_name']
+    
+    # Modify some names to be compatible with PyG requirements
     kg['x_type']= kg['x_type'].apply(lambda x: x.replace("/","_"))
     kg['y_type']= kg['y_type'].apply(lambda x: x.replace("/","_"))
     kg['relation']= kg['relation'].apply(lambda x: x.replace("-","_"))
     kg['relation']= kg['relation'].apply(lambda x: x.replace(" ","_"))
+    
+    unique_names = kg['x_name'].unique()
+    name_to_index = {name: idx for idx, name in enumerate(unique_names)}
+    kg['x_index'] = kg['x_name'].map(name_to_index)
+    kg['y_index'] = kg['y_name'].map(name_to_index)
     
     return kg
     
@@ -120,15 +128,13 @@ def constructDiseaseSimilarity(data,k):
         
         # Generate the one-hot vectors for the disease with important neighbors and concatenate them
         geneOneHot = generateOneHot(disease_idx,('disease','disease_protein','gene_protein'),data)
-        effectOneHot = generateOneHot(disease_idx,('disease', 'disease_phenotype_negative', 'effect_phenotype'),data) + generateOneHot(disease_idx,('disease', 'disease_phenotype_positive', 'effect_phenotype'),data)
-        exposureOneHot = generateOneHot(disease_idx,('disease', 'exposure_disease', 'exposure'),data)
         diseaseOneHot = generateOneHot(disease_idx,('disease','disease_disease','disease'),data)
         
-        return torch.tensor(np.hstack([geneOneHot,effectOneHot,exposureOneHot,diseaseOneHot]))
+        return torch.tensor(np.hstack([geneOneHot,diseaseOneHot]))
     
     # Get the number of diseases and the number of possible neighbors
     num_diseases = data['disease'].num_nodes
-    num_possible_neighbors = data['gene_protein'].num_nodes + data['effect_phenotype'].num_nodes + data['exposure'].num_nodes + data['disease'].num_nodes
+    num_possible_neighbors = data['gene_protein'].num_nodes + data['disease'].num_nodes
     
     # Generate the one-hot vectors for all diseases
     oneHots = torch.zeros(num_diseases,num_possible_neighbors)
@@ -234,7 +240,7 @@ def processData(embedding_dim, batch_size, fileName, k=10):
     
     # Save disease similarity matrix
     if 'disease_similarity.pt' not in os.listdir():
-        print("Processing disease similarities... (THIS WILL TAKE AROUND 70 MINUTES)")
+        print("Processing disease similarities... (THIS WILL TAKE AROUND 40 MINUTES)")
         torch.save(constructDiseaseSimilarity(data,10),'disease_similarity.pt')
         
     ## FUTURE MODIFICATION FOR OUR DISEASE INPUT
