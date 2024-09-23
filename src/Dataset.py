@@ -16,11 +16,17 @@ def processFiles(path, fileName):
     # Get data path and import important files
     dataPath = path + r'/data/' + fileName
     print(f"Loading data from path: {dataPath}")
-    kg = pd.read_csv(dataPath,low_memory=False)
+    kg = pd.read_csv(dataPath, header=None, delimiter=r'\t')
+    kg = kg.rename(columns={0: 'relation', 1: 'x_type', 2: 'x_name', 3: 'y_type', 4: 'y_name'})
     kg['x_type']= kg['x_type'].apply(lambda x: x.replace("/","_"))
     kg['y_type']= kg['y_type'].apply(lambda x: x.replace("/","_"))
     kg['relation']= kg['relation'].apply(lambda x: x.replace("-","_"))
     kg['relation']= kg['relation'].apply(lambda x: x.replace(" ","_"))
+    
+    # Get indices for each node
+    name_to_index_dict = {name: idx for idx, name in enumerate(kg['x_name'].unique())}
+    kg['x_index'] = kg['x_name'].map(name_to_index_dict)
+    kg['y_index'] = kg['y_name'].map(name_to_index_dict)
     
     return kg
     
