@@ -22,6 +22,12 @@ def processFiles(path, fileName):
     kg['y_type']= kg['y_type'].apply(lambda x: x.replace("/","_"))
     kg['relation']= kg['relation'].apply(lambda x: x.replace("-","_"))
     kg['relation']= kg['relation'].apply(lambda x: x.replace(" ","_"))
+    kg['x_name']= kg['x_name'].apply(lambda x: x.replace("-","_"))
+    kg['y_name']= kg['y_name'].apply(lambda x: x.replace("-","_"))
+    
+    name_to_index_dict = {tuple(row[1]): index for index, row in enumerate(kg[['x_type','x_name']].drop_duplicates().iterrows())}
+    kg['x_index'] = kg.apply(lambda row: name_to_index_dict[(row['x_type'], row['x_name'])], axis=1)
+    kg['y_index'] = kg.apply(lambda row: name_to_index_dict[(row['y_type'], row['y_name'])], axis=1)
     
     return kg
     
@@ -233,11 +239,11 @@ def processData(embedding_dim, batch_size, fileName, k=10):
     
     # Save disease similarity matrix
     if 'disease_similarity.pt' not in os.listdir():
-        print("Processing disease similarities... (THIS WILL TAKE AROUND 40 MINUTES)")
+        print("Processing disease similarities... (THIS WILL TAKE AROUND 160 MINUTES)")
         torch.save(constructDiseaseSimilarity(data,10),'disease_similarity.pt')
         
     ## FUTURE MODIFICATION FOR OUR DISEASE INPUT
     data['similarity'] = torch.load('disease_similarity.pt')
     print("Data processing complete.")
     
-    return data, ptrain_loader, pval_loader, ftrain_loader, fval_loader, ftest_loader
+    return data, ptrain_loader, pval_loader, ftrain_loader, fval_loader, ftest_loader, kg

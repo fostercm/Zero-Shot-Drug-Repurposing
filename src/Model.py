@@ -18,12 +18,6 @@ class KGLinkPredictor(Module):
             (GATConv(in_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
             SiLU(inplace=True),
             (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
-            SiLU(inplace=True),
-            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
-            SiLU(inplace=True),
-            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
-            SiLU(inplace=True),
-            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x')
         ])
         self.Encoder = to_hetero(self.Encoder, data.metadata())
         
@@ -84,7 +78,7 @@ class DistMultMod(torch.nn.Module):
         for i,relation in enumerate(rel_types):
             
             # Check if relation is a drug-disease relation
-            if loss_tag and (relation == 2 or relation == 3 or relation == 4):
+            if loss_tag and (relation == 4 or relation == 5 or relation == 6):
                 
                 # Get head index and modify disease embedding
                 head_index = head_indices[i].item()
@@ -100,7 +94,7 @@ class DistMultMod(torch.nn.Module):
         
         # Get proper relation title for accessing dataset
         relation_names = ['contraindication', 'indication', 'off_label_use']
-        relation_name = relation_names[relation-2]
+        relation_name = relation_names[relation-4]
         relation_title = ('disease',relation_name,'drug')
         
         # Adjust head index to get the correct disease index
