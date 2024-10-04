@@ -54,7 +54,7 @@ class DistMultMod(torch.nn.Module):
         self.num_relations = data.num_edges
         self.hidden_channels = hidden_channels
 
-        self.device = 'cuda' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
         self.node_emb = torch.empty(self.num_nodes, hidden_channels).to(self.device)
         self.rel_emb = torch.empty(self.num_relations, hidden_channels).to(self.device)
         self.data = data
@@ -199,3 +199,33 @@ def train(train_loader,val_loader, model, optimizer, device, epochs):
             val_loss += loss.item()
                 
         print(f"Epoch {epoch+1} | Average Training Loss: {train_loss / len(train_loader)} Average Validation Loss: {val_loss / len(val_loader)}")
+
+def quick_train(train_loader, model, optimizer, device, epochs):
+    
+    # Set model to training mode
+    model.train()
+    
+    for epoch in tqdm(range(epochs)):
+        
+        train_loss = 0
+        for batch in train_loader:
+            
+            # Send data to GPU
+            head_indices,relations,tail_indices = batch[:,0], batch[:,1], batch[:,2]
+            head_indices,relations,tail_indices = head_indices.to(device),relations.to(device),tail_indices.to(device)
+            
+            # Zero gradients
+            optimizer.zero_grad()
+            
+            # Forward pass through model to update node embeddings
+            model(head_indices,relations,tail_indices)
+            
+            # Compute and backpropagate loss
+            loss = model.loss(head_indices, relations, tail_indices)
+            train_loss += loss.item()
+            loss.backward()
+            
+            # Step optimizer
+            optimizer.step()
+        
+        print(f"Epoch {epoch+1} | Average Training Loss: {train_loss / len(train_loader)}")
