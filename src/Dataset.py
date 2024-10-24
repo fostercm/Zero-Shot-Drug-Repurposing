@@ -107,7 +107,7 @@ def processRelationData(indices):
     
     return processed_indices
 
-def constructDiseaseSimilarity(data,k):
+def constructDiseaseSimilarity(data,k,device):
     
     # Generate and combine the one-hot vectors for all important conditions
     def generateOverallOneHot(disease_idx,data):
@@ -128,12 +128,14 @@ def constructDiseaseSimilarity(data,k):
         # Generate the one-hot vectors for the disease with important neighbors and concatenate them
         geneOneHot = generateOneHot(disease_idx,('disease','disease_protein','gene_protein'),data)
         diseaseOneHot = generateOneHot(disease_idx,('disease','disease_disease','disease'),data)
+        effectOneHot = generateOneHot(disease_idx,('disease', 'disease_phenotype_negative', 'effect_phenotype'),data) + generateOneHot(disease_idx,('disease', 'disease_phenotype_positive', 'effect_phenotype'),data)
+        exposureOneHot = generateOneHot(disease_idx,('disease', 'exposure_disease', 'exposure'),data)
         
-        return torch.tensor(np.hstack([geneOneHot,diseaseOneHot]))
+        return torch.tensor(np.hstack([geneOneHot,diseaseOneHot,effectOneHot,exposureOneHot]))
     
     # Get the number of diseases and the number of possible neighbors
     num_diseases = data['disease'].num_nodes
-    num_possible_neighbors = data['gene_protein'].num_nodes + data['disease'].num_nodes
+    num_possible_neighbors = data['gene_protein'].num_nodes + data['effect_phenotype'].num_nodes + data['exposure'].num_nodes + data['disease'].num_nodes
     
     # Generate the one-hot vectors for all diseases
     oneHots = torch.zeros(num_diseases,num_possible_neighbors)
@@ -142,46 +144,26 @@ def constructDiseaseSimilarity(data,k):
     
     # Allocate storage for disease similarities
     disease_similarity_storage = torch.zeros(num_diseases,2,k)
-    similarity_matrix = torch.zeros(num_diseases,num_diseases)
     
-    # For each query disease, calculate the similarity to all other diseases and store
-    for query_disease in range(num_diseases):
-        
-        # Get query one-hot vector
-        queryOneHot = oneHots[query_disease]
-        
-        for key_disease in range(query_disease+1,num_diseases):
-            
-            # Get key one-hot vector
-            keyOneHot = oneHots[key_disease]
-            
-            # Calculate similarity
-            similarity = torch.dot(queryOneHot,keyOneHot)
-            
-            # Store in matrix (optimized for speed)
-            similarity_matrix[query_disease][key_disease] = similarity
-            similarity_matrix[key_disease][query_disease] = similarity
+    # Transfer one-hots to GPU
+    oneHots = oneHots.to(device)
     
-    for query_disease in range(num_diseases):
-        
-        # Get the similarity vector for the query disease
-        similarity = similarity_matrix[query_disease]
-        
-        # Get the top-k most similar diseases to the query disease and store them    
-        topk = torch.topk(similarity_matrix[query_disease],k)
-        
-        # Store the relative similarity values
-        if torch.sum(topk.values) == 0:
-            disease_similarity_storage[query_disease][0] = torch.zeros(k)
-        else:
-            disease_similarity_storage[query_disease][0] = topk.values / torch.sum(topk.values)
-            
-        # Store the top-k most similar diseases
-        disease_similarity_storage[query_disease][1] = topk.indices
+    # Calculate the similarity matrix
+    similarity_matrix = torch.matmul(oneHots,oneHots.T)
+    similarity_matrix.fill_diagonal_(0)
+    
+    # Take the top k and turn into similarity scores
+    values,indices = torch.topk(similarity_matrix,k)
+    row_sums = similarity_matrix.sum(dim=1, keepdim=True) + 1e-8
+    values = values / row_sums
+    
+    # Store the similarity values and indices
+    disease_similarity_storage[:,0,:] = values
+    disease_similarity_storage[:,1,:] = indices
         
     return disease_similarity_storage
     
-def processData(embedding_dim, batch_size, fileName, k=10):
+def processData(embedding_dim, batch_size, fileName, device, k=10):
     
     # Get data path and process knowledge graph
     path = os.path.dirname(os.getcwd())
@@ -239,8 +221,8 @@ def processData(embedding_dim, batch_size, fileName, k=10):
     
     # Save disease similarity matrix
     if 'disease_similarity.pt' not in os.listdir():
-        print("Processing disease similarities... (THIS WILL TAKE AROUND 160 MINUTES)")
-        torch.save(constructDiseaseSimilarity(data,10),'disease_similarity.pt')
+        print("Processing disease similarities...")
+        torch.save(constructDiseaseSimilarity(data,k,device),'disease_similarity.pt')
         
     ## FUTURE MODIFICATION FOR OUR DISEASE INPUT
     data['similarity'] = torch.load('disease_similarity.pt')

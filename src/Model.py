@@ -54,7 +54,7 @@ class DistMultMod(torch.nn.Module):
         self.num_relations = data.num_edges
         self.hidden_channels = hidden_channels
 
-        self.device = 'cuda:2' if torch.cuda.is_available() else 'cpu'
+        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
         self.node_emb = torch.empty(self.num_nodes, hidden_channels).to(self.device)
         self.rel_emb = torch.empty(self.num_relations, hidden_channels).to(self.device)
         self.data = data
@@ -78,7 +78,7 @@ class DistMultMod(torch.nn.Module):
         for i,relation in enumerate(rel_types):
             
             # Check if relation is a drug-disease relation
-            if loss_tag and (relation == 4 or relation == 5 or relation == 6):
+            if loss_tag and (relation == 5 or relation == 6 or relation == 7):
                 
                 # Get head index and modify disease embedding
                 head_index = head_indices[i].item()
@@ -94,7 +94,7 @@ class DistMultMod(torch.nn.Module):
         
         # Get proper relation title for accessing dataset
         relation_names = ['contraindication', 'indication', 'off_label_use']
-        relation_name = relation_names[relation-4]
+        relation_name = relation_names[relation-5]
         relation_title = ('disease',relation_name,'drug')
         
         # Adjust head index to get the correct disease index
