@@ -88,6 +88,24 @@ def processEdgeData(data, kg):
     
     # Store edge dict for future use
     data['global_to_local_dict'] = global_to_local_dict
+
+def addBioBERTEmbeddings(data, kg, path):
+    
+    # Modify diseases
+    diseases = list(pd.read_csv(path + '/data/disease_names.csv'))
+    disease_embeddings = torch.load(path + '/data/disease_embeddings.pt')
+    for i,disease in enumerate(diseases):
+        index = kg.loc[kg['x_name'] == disease]['x_index'].values[0] if len(kg.loc[kg['x_name'] == disease]['x_index'].values) > 0 else None
+        if index:
+            data['disease'].x[data['global_to_local_dict'][index]] = disease_embeddings[i]
+    
+    # Modify drugs
+    drugs = list(pd.read_csv(path + '/data/drug_names.csv'))
+    drug_embeddings = torch.load(path + '/data/drug_embeddings.pt')
+    for i,drug in enumerate(drugs):
+        index = kg.loc[kg['x_name'] == drug]['x_index'].values[0] if len(kg.loc[kg['x_name'] == drug]['x_index'].values) > 0 else None
+        if index:
+            data['drug'].x[data['global_to_local_dict'][index]] = drug_embeddings[i]
     
 def processRelationData(indices):
     
@@ -175,6 +193,7 @@ def processData(embedding_dim, batch_size, fileName, device, k=10):
     # Process node and edge data
     print("Processing node data...")
     processNodeData(data, kg, embedding_dim)
+    addBioBERTEmbeddings(data, kg, path)
     print("Processing edge data...")
     processEdgeData(data, kg)    
     

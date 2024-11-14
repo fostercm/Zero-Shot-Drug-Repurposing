@@ -11,17 +11,19 @@ import math
 
 
 class KGLinkPredictor(Module):
-    def __init__(self, in_channels, hidden_channels, data):
+    def __init__(self, in_channels, hidden_channels, data, device):
         super(KGLinkPredictor, self).__init__()
         
         self.Encoder = nn.Sequential('x, edge_index', [
             (GATConv(in_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
             SiLU(inplace=True),
             (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x'),
+            SiLU(inplace=True),
+            (GATConv(hidden_channels,hidden_channels,add_self_loops=False), 'x, edge_index -> x')
         ])
         self.Encoder = to_hetero(self.Encoder, data.metadata())
         
-        self.Decoder = DistMultMod(data, hidden_channels)
+        self.Decoder = DistMultMod(data, hidden_channels,device)
         
         self.data = data
 
@@ -45,6 +47,7 @@ class DistMultMod(torch.nn.Module):
         self,
         data: HeteroData,
         hidden_channels: int,
+        device: str,
         margin: float = 1.0,
         sparse: bool = False,
     ):
@@ -54,7 +57,7 @@ class DistMultMod(torch.nn.Module):
         self.num_relations = data.num_edges
         self.hidden_channels = hidden_channels
 
-        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.device = device
         self.node_emb = torch.empty(self.num_nodes, hidden_channels).to(self.device)
         self.rel_emb = torch.empty(self.num_relations, hidden_channels).to(self.device)
         self.data = data
