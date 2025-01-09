@@ -25,6 +25,15 @@ def processFiles(path, fileName):
     kg['x_name']= kg['x_name'].apply(lambda x: x.replace("-","_"))
     kg['y_name']= kg['y_name'].apply(lambda x: x.replace("-","_"))
     
+    # Create a reversed DataFrame to handle undirected edges
+    reversed_kg = kg.rename(columns={'x_type': 'y_type', 'x_name': 'y_name', 'y_type': 'x_type', 'y_name': 'x_name'})
+
+    # Concatenate the original and reversed DataFrames
+    kg = pd.concat([kg, reversed_kg], ignore_index=True)
+
+    # Drop duplicate rows to handle cases where (y, x) already exists
+    kg = kg.drop_duplicates()
+    
     name_to_index_dict = {tuple(row[1]): index for index, row in enumerate(kg[['x_type','x_name']].drop_duplicates().iterrows())}
     kg['x_index'] = kg.apply(lambda row: name_to_index_dict[(row['x_type'], row['x_name'])], axis=1)
     kg['y_index'] = kg.apply(lambda row: name_to_index_dict[(row['y_type'], row['y_name'])], axis=1)
