@@ -3,3 +3,4 @@ data
 models
 plots
 processed_data
+utils.__pycache__
