@@ -139,7 +139,6 @@ epochs = config['epochs']
 pretrain_loader = torch.load(data_paths['pretrain'])
 train_loader = torch.load(data_paths['train'])
 val_loader = torch.load(data_paths['val'])
-test_loader = torch.load(data_paths['test'])
 data = torch.load(data_paths['data_obj']).to(device)
 
 # Get embedding dimension
