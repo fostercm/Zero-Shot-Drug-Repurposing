@@ -121,7 +121,7 @@ def processRelationData(indices: pd.DataFrame) -> pd.DataFrame:
     
     return processed_indices
 
-def constructDiseaseSimilarity(data: HeteroData, k: int, device: str) -> torch.Tensor:
+def constructDiseaseSimilarity(data: HeteroData, k: int, device: torch.device) -> torch.Tensor:
     
     # Generate and combine the one-hot vectors for all important conditions
     def generateOverallOneHot(disease_idx: int, data: HeteroData) -> torch.Tensor:

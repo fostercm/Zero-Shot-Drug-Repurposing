@@ -11,7 +11,7 @@ def train(train_loader: DataLoader,
           val_loader: DataLoader, 
           model: KGLinkPredictor, 
           optimizer: Optimizer, 
-          device: str, 
+          device: torch.device, 
           epochs: int) -> Tuple[KGLinkPredictor, int]:
     "" "Train the model for a given number of epochs with train and validation" ""
     
@@ -63,7 +63,7 @@ def train(train_loader: DataLoader,
     
     return model, best_epoch, plot(train_losses, val_losses)
 
-def pretrain(train_loader: DataLoader, model: KGLinkPredictor, optimizer: Optimizer, device: str) -> KGLinkPredictor:
+def pretrain(train_loader: DataLoader, model: KGLinkPredictor, optimizer: Optimizer, device: torch.device) -> KGLinkPredictor:
     "" "Train the model for a given number of epochs with only the training set" ""
         
     # Set model to training mode
@@ -87,7 +87,7 @@ def pretrain(train_loader: DataLoader, model: KGLinkPredictor, optimizer: Optimi
             
     return model
 
-def model_pass(batch: Tensor, model: KGLinkPredictor, device: str) -> Tensor:
+def model_pass(batch: Tensor, model: KGLinkPredictor, device: torch.device) -> Tensor:
     "" "Pass a batch through the model and return the loss" ""
     
     # Send data to GPU
