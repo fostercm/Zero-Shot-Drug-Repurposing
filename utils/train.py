@@ -12,8 +12,12 @@ def train(train_loader: DataLoader,
           model: KGLinkPredictor, 
           optimizer: Optimizer, 
           device: torch.device, 
-          epochs: int) -> Tuple[KGLinkPredictor, int]:
-    "" "Train the model for a given number of epochs with train and validation" ""
+          epochs: int
+        ) -> Tuple[KGLinkPredictor, int, plt.Figure]:
+    """
+        Train the model for a given number of epochs with train and validation
+        sets and return the best model
+    """
     
     train_losses = []
     val_losses = []
@@ -64,7 +68,9 @@ def train(train_loader: DataLoader,
     return model, best_epoch, plot(train_losses, val_losses)
 
 def pretrain(train_loader: DataLoader, model: KGLinkPredictor, optimizer: Optimizer, device: torch.device) -> KGLinkPredictor:
-    "" "Train the model for a given number of epochs with only the training set" ""
+    """
+        Train the model for an epochs with the full pretraining set
+    """
         
     # Set model to training mode
     model.train()
@@ -88,7 +94,9 @@ def pretrain(train_loader: DataLoader, model: KGLinkPredictor, optimizer: Optimi
     return model
 
 def model_pass(batch: Tensor, model: KGLinkPredictor, device: torch.device) -> Tensor:
-    "" "Pass a batch through the model and return the loss" ""
+    """
+        Pass a batch through the model and return the loss
+    """
     
     # Send data to GPU
     batch.to(device)
@@ -101,7 +109,9 @@ def model_pass(batch: Tensor, model: KGLinkPredictor, device: torch.device) -> T
     return loss
 
 def plot(train_loss: List[float], val_loss: List[float]) -> plt.Figure:
-    "" "Plot the training and validation loss curves" ""
+    """
+        Plot the training and validation loss curves
+    """
     
     fig, ax = plt.subplots(1, 1, figsize=(10, 5))
     
@@ -111,7 +121,7 @@ def plot(train_loss: List[float], val_loss: List[float]) -> plt.Figure:
     
     # Add labels and legend
     ax.set_title("Loss Curves")
-    ax.set_xlabel("Batch")
+    ax.set_xlabel("Epoch")
     ax.set_ylabel("Loss")
     ax.legend()
     

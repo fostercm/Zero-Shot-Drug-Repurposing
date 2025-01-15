@@ -9,16 +9,18 @@ from torch_geometric.nn import Sequential as GeoSequential
 from typing import Tuple
 import math
 
-
-#
 class KGLinkPredictor(Module):
+    """
+        Knowledge Graph Link Predictor
+    """
+    
     def __init__(self, 
                  in_channels: int, 
                  hidden_channels: int, 
                  data: HeteroData,
                  num_heads: int=1, 
                  num_layers: int=2, 
-    ):
+                ):
         
         super(KGLinkPredictor, self).__init__()
         
@@ -45,11 +47,8 @@ class KGLinkPredictor(Module):
 
     def forward(self, head_indices: Tensor, relations: Tensor, tail_indices: Tensor) -> Tensor:
         
-        # Message Passing
-        x = self.Encoder(self.data.x_dict,self.data.edge_index_dict)
-        
-        # Update Embeddings
-        self.Decoder.node_emb = torch.vstack([*x.values()])
+        # Update embeddings
+        self.update()
         
         # Return prediction
         return torch.sigmoid(self.Decoder(head_indices, relations, tail_indices))
@@ -57,9 +56,18 @@ class KGLinkPredictor(Module):
     def loss(self, head_index: Tensor, relation: Tensor, tail_index: Tensor) -> Tensor:
         return self.Decoder.loss(head_index, relation, tail_index)
     
-    
+    def update(self) -> None:
+        
+        # Message Passing
+        x = self.Encoder(self.data.x_dict,self.data.edge_index_dict)
+        
+        # Update Embeddings
+        self.Decoder.node_emb = torch.vstack([*x.values()])
 
 class DistMultMod(torch.nn.Module):
+    """
+        Modified DistMult Model
+    """
 
     def __init__(
         self,
