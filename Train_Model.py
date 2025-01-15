@@ -1,10 +1,10 @@
 import torch
 from utils.model import KGLinkPredictor
 from utils.train import pretrain, train
+from utils.eval import predict_link, plot_roc_curves, plot_confusion_matrices
 from itertools import product
 from torch.optim import Adam
 import os
-
 import sys
 import json
 
@@ -29,6 +29,7 @@ data = torch.load(data_paths['data_obj']).to(device)
 # Get embedding dimension
 embedding_dim = data.node_stores[0]['x'].shape[1]
 
+# Train each model combination
 for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['num_heads'], params['num_layers']):
     
     print(f'\nTraining model | Hidden Dim: {hidden_dim} | Num Heads: {num_heads} | Num Layers: {num_layers}')
@@ -41,12 +42,22 @@ for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['n
     model = pretrain(pretrain_loader, model, optimizer, device)
     
     # Train model
-    model, _, fig = train(train_loader, val_loader, model, optimizer, device, epochs)
+    model, _, training_fig = train(train_loader, val_loader, model, optimizer, device, epochs)
     
     # Save model
     model_path = os.path.join(config['model_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}.pt')
     torch.save(model.state_dict(), model_path)
     
-    # Save plot
-    plot_path = os.path.join(config['plot_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}.png')
-    fig.savefig(plot_path)
+    # Save training plot
+    plot_path = os.path.join(config['plot_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}_')
+    training_fig.savefig(plot_path+'training.png')
+    
+    # Evaluate model and save evaluation plots
+    contraindication = predict_link(model,val_loader,2,device)
+    indication = predict_link(model,val_loader,3,device)
+    
+    confusion_fig = plot_confusion_matrices(indication, contraindication)
+    confusion_fig.savefig(plot_path+'confusion.png')
+    
+    roc_fig = plot_roc_curves(indication, contraindication)
+    roc_fig.savefig(plot_path+'roc.png')
