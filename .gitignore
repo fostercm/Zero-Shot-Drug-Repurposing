@@ -1,6 +1,6 @@
-configs
 data
 models
 plots
+predictions
 processed_data
 utils/__pycache__
