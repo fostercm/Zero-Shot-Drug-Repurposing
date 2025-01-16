@@ -1,0 +1,20 @@
+{
+    "model_path" : "models",
+    "model_name" : "MIGs-iEndos",
+    "plot_path" : "plots",
+    "data_paths" : {
+        "pretrain" : "processed_data/ptloader.pt",
+        "train" : "processed_data/trloader.pt",
+        "val" : "processed_data/vloader.pt",
+        "data_obj" : "processed_data/data.pt"
+    },
+    "params" : {
+        "learning_rate" : 0.001,
+        "hidden_dim" : [128,256],
+        "num_heads" : [1],
+        "num_layers" : [2,4,6]
+    },
+    "batch_size" : 4096,
+    "epochs" : 100,
+    "device" : "cuda"
+}
