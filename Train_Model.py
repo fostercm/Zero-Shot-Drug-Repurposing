@@ -32,6 +32,10 @@ embedding_dim = data.node_stores[0]['x'].shape[1]
 # Train each model combination
 for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['num_heads'], params['num_layers']):
     
+    if os.path.exists(os.path.join(config['model_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}.pt')):
+        print(f'\nModel already trained | Hidden Dim: {hidden_dim} | Num Heads: {num_heads} | Num Layers: {num_layers}')
+        continue
+    
     print(f'\nTraining model | Hidden Dim: {hidden_dim} | Num Heads: {num_heads} | Num Layers: {num_layers}')
     
     # Initialize model and optimizer
