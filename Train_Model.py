@@ -21,6 +21,7 @@ device = config['device']
 epochs = config['epochs']
 
 # Load the data
+print('Loading data...')
 pretrain_loader = torch.load(data_paths['pretrain'])
 train_loader = torch.load(data_paths['train'])
 val_loader = torch.load(data_paths['val'])
@@ -45,9 +46,11 @@ for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['n
     optimizer = Adam(model.parameters(), lr=params['learning_rate'])
     
     # Pretrain model
+    print('Pretraining model...')
     model = pretrain(pretrain_loader, model, optimizer, device)
     
     # Train model
+    print('Finetuning model...')
     model, _, training_fig = train(train_loader, val_loader, model, optimizer, device, epochs)
     
     # Save model
