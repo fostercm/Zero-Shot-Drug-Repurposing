@@ -32,11 +32,13 @@ embedding_dim = data.node_stores[0]['x'].shape[1]
 # Train each model combination
 for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['num_heads'], params['num_layers']):
     
-    if os.path.exists(os.path.join(config['model_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}.pt')):
-        print(f'\nModel already trained | Hidden Dim: {hidden_dim} | Num Heads: {num_heads} | Num Layers: {num_layers}')
+    full_model_name = f'{config['model_name']}_D{hidden_dim}_H{num_heads}_L{num_layers}'
+    
+    if os.path.exists(os.path.join(config['model_path'],full_model_name)):
+        print(f'\nModel {full_model_name} already exists. Skipping...')
         continue
     
-    print(f'\nTraining model | Hidden Dim: {hidden_dim} | Num Heads: {num_heads} | Num Layers: {num_layers}')
+    print(f'\nTraining model: {full_model_name}')
     
     # Initialize model and optimizer
     model = KGLinkPredictor(embedding_dim, hidden_dim, data, num_heads, num_layers).to(device)
@@ -49,11 +51,11 @@ for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['n
     model, _, training_fig = train(train_loader, val_loader, model, optimizer, device, epochs)
     
     # Save model
-    model_path = os.path.join(config['model_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}.pt')
+    model_path = os.path.join(config['model_path'],full_model_name+'.pt')
     torch.save(model.state_dict(), model_path)
     
     # Save training plot
-    plot_path = os.path.join(config['plot_path'],f'D{hidden_dim}_H{num_heads}_L{num_layers}_')
+    plot_path = os.path.join(config['plot_path'],full_model_name+'_')
     training_fig.savefig(plot_path+'training.png')
     
     # Evaluate model and save evaluation plots
