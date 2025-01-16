@@ -115,8 +115,6 @@ class DistMultMod(torch.nn.Module):
         tail = self.node_emb[tail_indices]
         rel = self.rel_emb[rel_types]
         
-        print(head.shape,rel.shape,tail.shape)
-        
         return (head * rel * tail).sum(dim=-1)
     
     def modifyDiseaseEmbedding(self, head_index: int, relation: int, l: float=0.7) -> Tensor:
