@@ -45,16 +45,19 @@ for i,disease in enumerate(our_diseases):
     contraindication_predictions[i] = torch.sigmoid(model.Decoder(query_disease,contraindication,drug)).detach().cpu().numpy().flatten()
 
 print('Plotting...')
-ax,fig = plt.subplots(len(our_diseases),2,figsize=(15,5))
+fig,ax = plt.subplots(len(our_diseases),2,figsize=(15,5))
 for i,disease in enumerate(contraindication_predictions):
     
-    fig[0].hist(indication_predictions[i],bins=10)
-    fig[0].set_title(f'{our_diseases[i]} Indication')
-    fig[0].set_xlabel('Score')
+    ax[0].hist(indication_predictions[i],bins=20)
+    ax[0].set_title(f'{our_diseases[i]} Indication')
+    ax[0].set_xlabel('Score')
+    ax[0].set_ylabel('# of drugs')
     
-    fig[1].hist(contraindication_predictions[i],bins=10)
-    fig[1].set_title(f'{our_diseases[i]} Contraindication')
-    fig[1].set_xlabel('Score')
+    ax[1].hist(contraindication_predictions[i],bins=20)
+    ax[1].set_title(f'{our_diseases[i]} Contraindication')
+    ax[1].set_xlabel('Score')
+    ax[1].set_ylabel('# of drugs')
+fig.savefig(config['plot_path'])
 
 print(f'Finding top {k} drugs...')
 drugs = kg[kg['x_type']=='drug']['x_name'].unique()
