@@ -40,7 +40,7 @@ class KGLinkPredictor(Module):
         self.Encoder = to_hetero(self.Encoder, data.metadata())
         
         ## Build decoder
-        self.Decoder = DistMultMod(data, hidden_channels)
+        self.Decoder = DistMultMod(data, hidden_channels, num_heads)
         
         # Save data
         self.data = data
@@ -73,6 +73,7 @@ class DistMultMod(torch.nn.Module):
         self,
         data: HeteroData,
         hidden_channels: int,
+        num_heads: int = 1,
         margin: float = 1.0,
         sparse: bool = False,
     ):
@@ -82,8 +83,8 @@ class DistMultMod(torch.nn.Module):
         self.num_relations = data.num_edges
         self.hidden_channels = hidden_channels
 
-        self.node_emb = torch.empty(self.num_nodes, hidden_channels)
-        self.rel_emb = Parameter(torch.empty(self.num_relations, hidden_channels))
+        self.node_emb = torch.empty(self.num_nodes, hidden_channels*num_heads)
+        self.rel_emb = Parameter(torch.empty(self.num_relations, hidden_channels*num_heads))
         
         self.data = data
         self.margin = margin
@@ -113,6 +114,8 @@ class DistMultMod(torch.nn.Module):
         head = self.node_emb[head_indices]
         tail = self.node_emb[tail_indices]
         rel = self.rel_emb[rel_types]
+        
+        print(head.shape,rel.shape,tail.shape)
         
         return (head * rel * tail).sum(dim=-1)
     
