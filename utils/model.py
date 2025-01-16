@@ -137,7 +137,6 @@ class DistMultMod(torch.nn.Module):
 
         # Compute weighted sum of neighbor embeddings
         disease_vector = torch.sum(similarity_scores.unsqueeze(1) * neighbor_embeddings, dim=0, keepdim=True)
-        # disease_vector = torch.matmul(similarity_scores.unsqueeze(0), neighbor_embeddings).squeeze(0)
 
         # Return modified embedding
         return disease_constant * disease_vector + (1 - disease_constant) * self.node_emb[head_index]
