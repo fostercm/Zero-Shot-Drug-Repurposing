@@ -8,11 +8,11 @@ This repository contains the implementation of a pipeline for knowledge graph-ba
 1. [Overview](#overview)
 2. [Installation](#installation)
 3. [Usage](#usage)
-    - [Generate BERT Embeddings](#1-generate-bert-embeddings)
-    - [Process Data](#2-process-data)
-    - [Train Models](#3-train-models)
-    - [Drug Search](#4-drug-search)
-4. [Acknowledgments](#acknowledgments)
+    - [Generate BERT Embeddings](#generate-bert-embeddings)
+    - [Process Data](#process-data)
+    - [Train Models](#train-models)
+    - [Drug Search](#drug-search)
+4. [Acknowledgments](#acknowledgements)
 5. [License](#license)
 
 ---
