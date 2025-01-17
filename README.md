@@ -43,39 +43,39 @@ This project uses a heterogeneous knowledge graph and transformer-based embeddin
 
 To run the pipeline, follow these steps:
 
-1. **Generate BERT Embeddings**:
+### **Generate BERT Embeddings**:
 
-    * Utility
-      * Improve model initialization
-      * Faster convergence
-      * Higher few-shot accuracy
+* Utility
+    * Improve model initialization
+    * Faster convergence
+    * Higher few-shot accuracy
 
-    * Config file template
-      ```json
-      {
-      "BERT_model": "dmis-lab/biobert-v1.1",
-      "feature_table_path" : "path.csv",
-      "features" : ["feature1","feature2","feature3"],
-      "max_sentence_length" : 500,
-      "device" : "cuda",
-      "batch_size" : 128,
-      "output_path" : "path.pt"
-      }
-      ```
+* Config file template
+  ```json
+  {
+  "BERT_model": "dmis-lab/biobert-v1.1",
+  "feature_table_path" : "path.csv",
+  "features" : ["feature1","feature2","feature3"],
+  "max_sentence_length" : 500,
+  "device" : "cuda",
+  "batch_size" : 128,
+  "output_path" : "path.pt"
+  }
+  ```
 
-    * Execution
-      ```bash
-      python BERT_Embedder.py BERT_config.json
-      ```
+* Execution
+  ```bash
+  python BERT_Embedder.py BERT_config.json
+  ```
 
-2. **Process Data**:
+### **Process Data**:
 
-   * Utility
-     * Process knowledge graph into a PyG data object
-     * Create dataloaders for pretraining and finetuning
-     * Save dataloaders for future use
+* Utility
+    * Process knowledge graph into a PyG data object
+    * Create dataloaders for pretraining and finetuning
+    * Save dataloaders for future use
 
-   * Config file template
+* Config file template
      ```json
      {
       "graph_file" : "raw_graph_path.csv",
@@ -100,20 +100,20 @@ To run the pipeline, follow these steps:
      }
      ```
 
-   * Execution
+* Execution
      ```bash
      python Process_Data.py data_config.json
      ```
 
-3. **Train Models**:
+### **Train Models**:
 
-   * Utility
-     * Bulk training
-     * Hyperparameter tuning
-     * Pretraining + finetuning
-     * Train and val plots, confusion matrices, and ROC curve + AUC
+* Utility
+    * Bulk training
+    * Hyperparameter tuning
+    * Pretraining + finetuning
+    * Train and val plots, confusion matrices, and ROC curve + AUC
 
-   * Config file template
+* Config file template
      ```json
      {
       "model_path" : "models",
@@ -136,20 +136,20 @@ To run the pipeline, follow these steps:
       "device" : "cuda"
      }
      ```
-     
-     * Execution
+ 
+ * Execution
      ```bash
      python Train_Model.py model_config.json
      ```
      
-4. **Drug Search**:
+### **Drug Search**:
 
-   * Utility
-     * Prediction of drug indication/contraindication
-     * Return topk candidates
-     * Visible score distributions
-    
-   * Config file template
+* Utility
+    * Prediction of drug indication/contraindication
+    * Return topk candidates
+    * Visible score distributions
+
+* Config file template
      ```json
      {
       "test_diseases" : ["iEndos"],
@@ -169,7 +169,7 @@ To run the pipeline, follow these steps:
      }
      ```
 
-   * Execution
+* Execution
      ```bash
      python Drug_Search.py search_config.json
      ```
