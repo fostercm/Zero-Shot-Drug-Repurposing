@@ -56,8 +56,8 @@ pretrain_indices = pretrain_indices.astype({'x_index': 'int64', 'relation': 'int
 finetune_indices = finetune_indices.astype({'x_index': 'int64', 'relation': 'int64', 'y_index': 'int64'})
 
 # Turn into tensors
-pdata = torch.tensor(pretrain_indices.values,dtype=torch.long).to(device)
-fdata = torch.tensor(finetune_indices.values,dtype=torch.long).to(device)
+pdata = torch.tensor(pretrain_indices.values,dtype=torch.int32).to(device)
+fdata = torch.tensor(finetune_indices.values,dtype=torch.int32).to(device)
 
 # Split finetuning data into train, validation, and test sets
 train_data, val_data, test_data = torch.utils.data.random_split(fdata, [0.8,0.1,0.1])

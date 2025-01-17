@@ -71,8 +71,8 @@ def processEdgeData(data: HeteroData, kg: pd.DataFrame) -> None:
         group = subgroups.get_group(group_name)
         
         # Get edge indices and create edge list
-        x_indices = torch.tensor(group['group_x'].values, dtype=torch.long)
-        y_indices = torch.tensor(group['group_y'].values, dtype=torch.long)
+        x_indices = torch.tensor(group['group_x'].values, dtype=torch.int32)
+        y_indices = torch.tensor(group['group_y'].values, dtype=torch.int32)
         edge_list = torch.stack([x_indices, y_indices], dim=0)
             
         # Store in data
@@ -135,7 +135,7 @@ def constructDiseaseSimilarity(data: HeteroData, k: int, device: torch.device) -
             neighbors = edges[1][mask]
             
             # Generate the one-hot vector
-            one_hot = np.zeros(data[edge_type[2]].num_nodes,dtype=int)
+            one_hot = np.zeros(data[edge_type[2]].num_nodes,dtype=np.int8)
             one_hot[neighbors] = 1
             return one_hot
         
