@@ -8,10 +8,10 @@ This repository contains the implementation of a pipeline for knowledge graph-ba
 1. [Overview](#overview)
 2. [Installation](#installation)
 3. [Usage](#usage)
-    - [Generate BERT Embeddings](#generate-bert-embeddings)
-    - [Process Data](#process-data)
-    - [Train Models](#train-models)
-    - [Drug Search](#drug-search)
+    - [Generate BERT Embeddings](#1-generate-bert-embeddings)
+    - [Process Data](#2-process-data)
+    - [Train Models](#3-train-models)
+    - [Drug Search](#4-drug-search)
 4. [Acknowledgments](#acknowledgements)
 5. [License](#license)
 
@@ -43,7 +43,7 @@ This project uses a heterogeneous knowledge graph and transformer-based embeddin
 
 To run the pipeline, follow these steps:
 
-### **Generate BERT Embeddings**:
+### **1. Generate BERT Embeddings**:
 
 * Utility
     * Improve model initialization
@@ -68,7 +68,7 @@ To run the pipeline, follow these steps:
   python BERT_Embedder.py BERT_config.json
   ```
 
-### **Process Data**:
+### **2. Process Data**:
 
 * Utility
     * Process knowledge graph into a PyG data object
@@ -105,7 +105,7 @@ To run the pipeline, follow these steps:
      python Process_Data.py data_config.json
      ```
 
-### **Train Models**:
+### **3. Train Models**:
 
 * Utility
     * Bulk training
@@ -142,7 +142,7 @@ To run the pipeline, follow these steps:
      python Train_Model.py model_config.json
      ```
      
-### **Drug Search**:
+### **4. Drug Search**:
 
 * Utility
     * Prediction of drug indication/contraindication
@@ -184,4 +184,4 @@ I would like to express my gratitude to the following  organizations for their c
 
 ## **License**
 
-This project is licensed under the MIT License. See the full license details below:
+This project is licensed under the MIT License
