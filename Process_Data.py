@@ -27,7 +27,8 @@ output_paths = config['output_paths']
 # Process node data
 print("Processing node data...")
 processNodeData(data, kg, config['embedding_dim'])
-addBioBERTEmbeddings(data, kg, config['BERT_files'])
+if config['BERT_files']:
+    addBioBERTEmbeddings(data, kg, config['BERT_files'])
 
 # Process edge data
 print("Processing edge data...")
