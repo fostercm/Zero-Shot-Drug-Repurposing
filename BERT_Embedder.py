@@ -20,6 +20,7 @@ model = AutoModel.from_pretrained(model_name)
 # Read data
 print("Reading data...")
 data = pd.read_csv(config['feature_table_path'])
+data.drop_duplicates(subset=config['node_index'], inplace=True)
 
 # Replace NaNs and aggregate into sentences
 data.fillna("", inplace=True)
