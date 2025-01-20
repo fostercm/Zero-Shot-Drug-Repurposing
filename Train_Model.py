@@ -16,9 +16,9 @@ with open(config_file) as f:
 # Extract config info
 data_paths = config['data_paths']
 params = config['params']
-batch_size = config['batch_size']
 device = config['device']
 epochs = config['epochs']
+model_name = config['model_name']
 
 # Load the data
 print('Loading data...')
@@ -33,7 +33,7 @@ embedding_dim = data.node_stores[0]['x'].shape[1]
 # Train each model combination
 for hidden_dim, num_heads, num_layers in product(params['hidden_dim'], params['num_heads'], params['num_layers']):
     
-    full_model_name = f'{config['model_name']}_D{hidden_dim}_H{num_heads}_L{num_layers}'
+    full_model_name = f'{model_name}_D{hidden_dim}_H{num_heads}_L{num_layers}'
     
     if os.path.exists(os.path.join(config['model_path'],full_model_name)):
         print(f'\nModel {full_model_name} already exists. Skipping...')
