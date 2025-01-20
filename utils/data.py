@@ -71,8 +71,8 @@ def processEdgeData(data: HeteroData, kg: pd.DataFrame) -> None:
         group = subgroups.get_group(group_name)
         
         # Get edge indices and create edge list
-        x_indices = torch.tensor(group['group_x'].values, dtype=torch.int32)
-        y_indices = torch.tensor(group['group_y'].values, dtype=torch.int32)
+        x_indices = torch.tensor(group['group_x'].values, dtype=torch.int64)
+        y_indices = torch.tensor(group['group_y'].values, dtype=torch.int64)
         edge_list = torch.stack([x_indices, y_indices], dim=0)
             
         # Store in data
