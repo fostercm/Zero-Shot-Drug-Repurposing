@@ -4,6 +4,7 @@ import json
 import torch
 from utils.model import KGLinkPredictor
 import matplotlib.pyplot as plt
+import os
 
 # Read the config file
 config_file = sys.argv[1]
@@ -44,9 +45,9 @@ for i,disease in enumerate(our_diseases):
     indication_predictions[i] = torch.sigmoid(model.Decoder(query_disease,indication,drug)).detach().cpu().numpy().flatten()
     contraindication_predictions[i] = torch.sigmoid(model.Decoder(query_disease,contraindication,drug)).detach().cpu().numpy().flatten()
 
-print('Plotting...')
-fig,ax = plt.subplots(len(our_diseases),2,figsize=(15,5))
-for i,disease in enumerate(contraindication_predictions):
+for i,disease in enumerate(our_diseases):
+    print(f'Plotting {disease} scores...')
+    fig,ax = plt.subplots(1,2,figsize=(15,5))
     
     ax[0].hist(indication_predictions[i],bins=20)
     ax[0].set_title(f'{our_diseases[i]} Indication')
@@ -57,13 +58,14 @@ for i,disease in enumerate(contraindication_predictions):
     ax[1].set_title(f'{our_diseases[i]} Contraindication')
     ax[1].set_xlabel('Score')
     ax[1].set_ylabel('# of drugs')
-fig.savefig(config['plot_path'])
+    fig.savefig(os.path.join(config['plot_path'],f'{our_diseases[i]}.png'))
+    plt.close(fig)
 
-print(f'Finding top {k} drugs...')
-drugs = kg[kg['x_type']=='drug']['x_name'].unique()
-best_drugs = drugs[torch.topk(torch.Tensor(indication_predictions[0]),k).indices]
+    print(f'Finding top {k} drugs for {our_diseases[i]}...')
+    drugs = kg[kg['x_type']=='drug']['x_name'].unique()
+    best_drugs = drugs[torch.topk(torch.Tensor(indication_predictions[i]),k).indices]
 
-print(f'Saving top {k} drugs to {config["output_path"]}...')
-with open(config['output_path'], "w") as file:
-    for drug in best_drugs:
-        file.write(drug + "\n")
+    print(f'Saving top {k} drugs to {os.path.join(config["output_path"],disease)}.txt...')
+    with open(os.path.join(config["output_path"],disease+'.txt'), "w") as file:
+        for drug in best_drugs:
+            file.write(drug + "\n")
