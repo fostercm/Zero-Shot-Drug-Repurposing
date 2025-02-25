@@ -27,12 +27,12 @@ output_paths = config['output_paths']
 # Process node data
 print("Processing node data...")
 processNodeData(data, kg, config['embedding_dim'])
-if config['BERT_files']:
+if 'BERT_files' in config.keys():
     addBioBERTEmbeddings(data, kg, config['BERT_files'])
 
 # Process edge data
 print("Processing edge data...")
-processEdgeData(data, kg)    
+processEdgeData(data, kg)
 
 # Get dictionary of names to numbers for relations
 print("Setting up dataloaders...")
